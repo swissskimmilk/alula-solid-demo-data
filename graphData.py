@@ -11,6 +11,7 @@ masterTimes = {}
 firstTime = None
 lastTime = None
 
+# Processes the incoming file and stores the data in the rawData dictionary 
 def getAllData(fileName):
     keys = rawData.keys()
     packets = open(fileName, 'r').read().split("\n\n")
@@ -26,6 +27,7 @@ def getAllData(fileName):
                     rawData[key][1].append(float(pair.split(": ")[1].strip("*No more data*")))
                     break
 
+# Creates a dataframe out of the raw data dictionary, and adds the dpdt column 
 def createDf():
     assert(masterTimes), "Must run getAllData first"
     df = pd.DataFrame({"Time": masterTimes.values()}, index=masterTimes.keys())
@@ -40,14 +42,13 @@ def createDf():
         df.to_excel('data.xlsx', index=True)
     return removeOutliers(df)
 
-# This should be improved like a lot 
+# This should be improved like a lot, it just removed excessively large values right now 
 def removeOutliers(df): 
-    print(df.dtypes)
     for key in rawData.keys():
         df[key] = df[key].apply(lambda x: None if abs(x) > 1e6 else x)
-    print(df.dtypes)
     return df
 
+# Find the launch and return a new data frame with only the launch data 
 def findLaunch():
     df = createDf()
     pressureMean = df.loc[:, 'Pressure'].mean()
@@ -59,6 +60,7 @@ def findLaunch():
         launchDf.to_excel('launchData.xlsx', index=True)
     return launchDf
 
+# Plots all of the data from findLaunch
 def plotAll():
     df = findLaunch()
     startTime = df.iloc[0]['Time']
@@ -68,6 +70,7 @@ def plotAll():
     for key in rawData.keys():
         df[key].plot(style='b.')
         plt.title(key + " (rocket)")
+        plt.xlabel("Seconds")
         plt.show()
 
 getAllData("Rocket Uncompressed.txt")
