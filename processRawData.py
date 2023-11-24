@@ -19,15 +19,9 @@ NO_MORE_DATA_STRING = "*No more data*"
 
 PROCESS_ROCKET = True
 PROCESS_ANTENNA = True
-PLOT = True
 
 IDDataTypes = {BARO_ID: [2, 2], ACCEL_ID: [2, 2, 2], SH2_GYRO_ID: [2, 2, 2], SH2_ROT_ID: [2, 2, 2], SH2_ACCEL_ID: [2, 2, 2], RESET_ID: [1], TIME_ID: [3], SATS_ID: [1], UBX_ID: [1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], GNSS_ID:[3, 3, 3, 3, 1]}
 IDStrings = {BARO_ID: ["Pressure: ", " | Temperature: "], ACCEL_ID: ["X accel: ", " | Y accel: ", " | Z accel: "], SH2_GYRO_ID: ["Gyro X: ", " | Gyro Y: ", " | Gyro Z: "], SH2_ROT_ID: ["Yaw: ", " | Pitch: ", " | Roll: "], SH2_ACCEL_ID: ["NG accel X: ", " | NG accel Y: ", " | NG accel Z: "], RESET_ID: ["Reset: "], TIME_ID: ["\nCurr micros: "], SATS_ID: ["Num satellites: "], UBX_ID: ["", ":", ":", ":", " | Latitude: ", " | Longitude: ", " | Altitude: ", " | North vel: ", " | East val: ", " | Down vel: ", " | Groundspeed: ", " | Vert acc: ", " | HorAcc: ", " | SpeedAcc: "], GNSS_ID: ["Time: ", "| Latitude: ", " | Longitude: ", " | Altitude MSL: ", " | Fix type: "]};
-
-graphDict = {'Temperature': [[], []], 'Pressure': [[], []], 'X accel': [[], []], 'Y accel': [[], []], 'Z accel': [[], []]}
-firstTime = None
-lastTime = None
-currTime = None
 
 def uncompressArray(bArray, outputFile):
     currTime = None
@@ -136,46 +130,3 @@ if PROCESS_ANTENNA:
     aProcessed = open("Antenna Processed.txt", 'w')
     breakApart("Antenna Data.txt", aProcessed)
     aProcessed.close()
-
-def plot(file, key):
-    
-
-    if PLOT:
-        if id == TIME_ID:
-            currTime = value
-            global firstTime, lastTime
-            if firstTime == None:
-                firstTime = currTime
-            lastTime = currTime
-        elif currTime == None: 
-            print("Time invalid")
-        elif id == BARO_ID:
-            if j == 0: 
-                graphDict['Pressure'][0].append(currTime)
-                graphDict['Pressure'][1].append(value)
-            else: 
-                graphDict['Temperature'][0].append(currTime)
-                graphDict['Temperature'][1].append(value)
-        elif id == ACCEL_ID:
-            if j == 0: 
-                graphDict['X accel'][0].append(currTime)
-                graphDict['X accel'][1].append(value)
-            elif j == 1:
-                graphDict['Y accel'][0].append(currTime)
-                graphDict['Y accel'][1].append(value)
-            else:
-                graphDict['Z accel'][0].append(currTime)
-                graphDict['Z accel'][1].append(value)
-
-if PLOT:
-    # plt.plot(graphDict['Pressure'][0], graphDict['Pressure'][1], 'bo')
-    # plt.title('Pressure (rocket)')
-    # plt.ylim(950, 800)
-
-    plt.plot(graphDict['Z accel'][0], graphDict['Z accel'][1], 'bo')
-    plt.title('Z accel (antenna)')
-    plt.ylim(-250, 250)
-
-    plt.xlim(-675184416, -550149756)
-    # plt.xlim(firstTime, lastTime)
-    plt.show()

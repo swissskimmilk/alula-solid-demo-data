@@ -10,6 +10,8 @@ EXPORT_LAUNCH = False
 rawData = {'Temperature': [[], []], 'Pressure': [[], []], 'X accel': [[], []], 'Y accel': [[], []], 'Z accel': [[], []]}
 # Structure: {index: micros}
 masterTimes = {}
+altitudeFunc1 = lambda temp0, press0: (lambda p: 3.28084 * ((temp0+273.15) * (1 - (p / 1013.25) ** (1 / ((9.812 * 28.97 / 1000) / ((6.5 / 1000) * 8.31432))))) / (6.5 / 1000) - 3.28084 * ((temp0+273.15) * (1 - (press0 / 1013.25) ** (1 / ((9.812 * 28.97 / 1000) / ((6.5 / 1000) * 8.31432))))) / (6.5 / 1000))
+altitudeFunc2 = lambda temp0, press0: (lambda p: 3.28084*((8.314*(temp0+273.15)* math.log(p/1013.25))/(-9.812*0.02905)) - 3.28084*((8.314*(temp0+273.15)* math.log(press0/1013.25))/(-9.812*0.02905)))
 
 # Processes the incoming file and stores the data in the rawData dictionary 
 def getAllData(fileName):
@@ -63,6 +65,8 @@ def findLaunch():
 # Plots all of the data from findLaunch
 def plotAll():
     launchDf, df = findLaunch()
+    startIndex = launchDf.index[0]
+    print(startIndex)
     startTime = launchDf.iloc[0]['Time']
     # This will break if there is an overflow during the plotting but I don't care
     newIndices = launchDf['Time'].apply(lambda x: (x - startTime) / 1e6)
@@ -74,15 +78,18 @@ def plotAll():
     #     plt.show()
 
     # To plot the alitude 
-    pressureMean = df.loc[:, 'Pressure'].mean()
-    tempMean = df.loc[:, 'Temperature'].mean()
-    altitude = launchDf['Pressure'].apply(lambda p: 3.28084 * ((tempMean+273.15) * (1 - (p / pressureMean) ** (1 / ((9.8 * 28.97 / 1000) / ((6.5 / 1000) * 8.31432))))) / (6.5 / 1000))
-    # altitude = launchDf['Pressure'].apply(lambda p: 3.28084*((8.314*(tempMean+273.15)* math.log(p/943.89))/(-9.812*0.02905)))
+    # pressureMean = df.loc[:, 'Pressure'].mean()
+    # tempMean = df.loc[:, 'Temperature'].mean()
+    pressure0 = df.loc[startIndex - 50: startIndex, 'Pressure'].mean()
+    print(pressure0)
+    temp0 = df.loc[startIndex - 50: startIndex, 'Temperature'].mean()
+    print(temp0)
+    altitude = launchDf['Pressure'].apply(altitudeFunc1(temp0, pressure0))
+    # altitude = launchDf['Pressure'].apply(altitudeFunc2(temp0, pressure0))
     altitude.name = "Altitude"
-    print(altitude.max())
     launchDf = launchDf.join(altitude)
     launchDf["Altitude"].plot(style='b.')
-    plt.title("Altitude")
+    plt.title("Altitude (" + str(round(altitude.max(), 2)) + " ft apogee)")
     plt.xlabel("Seconds")
     plt.show()
 
