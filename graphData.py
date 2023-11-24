@@ -53,7 +53,7 @@ def findLaunch():
     pressureMean = df.loc[:, 'Pressure'].mean()
     startIndex = df.loc[(df['dpdt'] < -20) & (df['Z accel'] > 20)].index[0] - 50
     windowDf = df.loc[startIndex + 100:]
-    endIndex = windowDf.loc[(abs(windowDf['dpdt']) < 1) & (windowDf['Pressure'] > pressureMean * 0.995)].index[0] + 50
+    endIndex = windowDf.loc[(abs(windowDf['dpdt']) < 1) & (windowDf['Pressure'] > pressureMean * 0.995)].index[0] + 300
     launchDf = df.loc[startIndex:endIndex]
     if EXPORT_LAUNCH:
         launchDf.to_excel('launchData.xlsx', index=True)
@@ -71,6 +71,17 @@ def plotAll():
         plt.title(key + " (rocket)")
         plt.xlabel("Seconds")
         plt.show()
+
+    # To plot the alitude 
+    pressureMean = df.loc[:, 'Pressure'].mean()
+    tempMean = df.loc[:, 'Temperature'].mean()
+    altitude = df['Pressure'].apply(lambda p: (tempMean * (1 - (p / pressureMean) ** (1 / ((9.8 * 28.97 / 1000) / ((6.5 / 1000) * 287))))) / (6.5 / 1000))
+    altitude.name = "Altitude"
+    df = df.join(altitude)
+    df["Altitude"].plot(style='b.')
+    plt.title("Altitude")
+    plt.xlabel("Seconds")
+    plt.show()
 
 getAllData("Rocket Uncompressed.txt")
 plotAll()
