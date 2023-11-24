@@ -1,6 +1,7 @@
 import re
 import pandas as pd 
 import matplotlib.pyplot as plt 
+import math
 
 EXPORT_DATA = False
 EXPORT_LAUNCH = False
@@ -57,28 +58,30 @@ def findLaunch():
     launchDf = df.loc[startIndex:endIndex]
     if EXPORT_LAUNCH:
         launchDf.to_excel('launchData.xlsx', index=True)
-    return launchDf
+    return launchDf, df
 
 # Plots all of the data from findLaunch
 def plotAll():
-    df = findLaunch()
-    startTime = df.iloc[0]['Time']
+    launchDf, df = findLaunch()
+    startTime = launchDf.iloc[0]['Time']
     # This will break if there is an overflow during the plotting but I don't care
-    newIndices = df['Time'].apply(lambda x: (x - startTime) / 1e6)
-    df = df.set_index(newIndices)
-    for key in rawData.keys():
-        df[key].plot(style='b.')
-        plt.title(key + " (rocket)")
-        plt.xlabel("Seconds")
-        plt.show()
+    newIndices = launchDf['Time'].apply(lambda x: (x - startTime) / 1e6)
+    launchDf = launchDf.set_index(newIndices)
+    # for key in rawData.keys():
+    #     launchDf[key].plot(style='b.')
+    #     plt.title(key + " (rocket)")
+    #     plt.xlabel("Seconds")
+    #     plt.show()
 
     # To plot the alitude 
     pressureMean = df.loc[:, 'Pressure'].mean()
     tempMean = df.loc[:, 'Temperature'].mean()
-    altitude = df['Pressure'].apply(lambda p: (tempMean * (1 - (p / pressureMean) ** (1 / ((9.8 * 28.97 / 1000) / ((6.5 / 1000) * 287))))) / (6.5 / 1000))
+    altitude = launchDf['Pressure'].apply(lambda p: 3.28084 * ((tempMean+273.15) * (1 - (p / pressureMean) ** (1 / ((9.8 * 28.97 / 1000) / ((6.5 / 1000) * 8.31432))))) / (6.5 / 1000))
+    # altitude = launchDf['Pressure'].apply(lambda p: 3.28084*((8.314*(tempMean+273.15)* math.log(p/943.89))/(-9.812*0.02905)))
     altitude.name = "Altitude"
-    df = df.join(altitude)
-    df["Altitude"].plot(style='b.')
+    print(altitude.max())
+    launchDf = launchDf.join(altitude)
+    launchDf["Altitude"].plot(style='b.')
     plt.title("Altitude")
     plt.xlabel("Seconds")
     plt.show()
