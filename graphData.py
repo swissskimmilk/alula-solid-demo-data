@@ -5,9 +5,10 @@ import math
 
 EXPORT_DATA = False
 EXPORT_LAUNCH = False
+SEPARATE_FIGURES = True
 
 # Structure: {'Title': [[indices], [values]]}
-rawData = {'Temperature': [[], []], 'Pressure': [[], []], 'X accel': [[], []], 'Y accel': [[], []], 'Z accel': [[], []]}
+rawData = {'X accel': [[], []], 'Y accel': [[], []], 'Z accel': [[], []], 'Temperature': [[], []], 'Pressure': [[], []]}
 # Structure: {index: micros}
 masterTimes = {}
 altitudeFunc1 = lambda temp0, press0: (lambda p: 3.28084 * ((temp0+273.15) * (1 - (p / 1013.25) ** (1 / ((9.812 * 28.97 / 1000) / ((6.5 / 1000) * 8.31432))))) / (6.5 / 1000) - 3.28084 * ((temp0+273.15) * (1 - (press0 / 1013.25) ** (1 / ((9.812 * 28.97 / 1000) / ((6.5 / 1000) * 8.31432))))) / (6.5 / 1000))
@@ -66,30 +67,44 @@ def findLaunch():
 def plotAll():
     launchDf, df = findLaunch()
     startIndex = launchDf.index[0]
-    print(startIndex)
     startTime = launchDf.iloc[0]['Time']
     # This will break if there is an overflow during the plotting but I don't care
     newIndices = launchDf['Time'].apply(lambda x: (x - startTime) / 1e6)
     launchDf = launchDf.set_index(newIndices)
-    # for key in rawData.keys():
-    #     launchDf[key].plot(style='b.')
-    #     plt.title(key + " (rocket)")
-    #     plt.xlabel("Seconds")
-    #     plt.show()
+
+    if not SEPARATE_FIGURES:
+        fig, axes = plt.subplots(nrows=2, ncols=3)
+        keys = list(rawData.keys())
+        for i in range(len(keys)):
+            launchDf[keys[i]].plot(style='b.', markersize=3, ax=axes[i // 3, i % 3], title=keys[i] + " (rocket)", xlabel="Seconds")
+            # plt.title(keys[i] + " (rocket)")
+            plt.xlabel("Seconds")
+        plt.tight_layout()
+    else:
+        keys = list(rawData.keys())
+        for i in range(len(keys)):
+            launchDf[keys[i]].plot(style='b.', markersize=3, title=keys[i] + " (rocket)", xlabel="Seconds")
+            plt.xlabel("Seconds")
+            plt.show()  
 
     # To plot the alitude 
     # pressureMean = df.loc[:, 'Pressure'].mean()
     # tempMean = df.loc[:, 'Temperature'].mean()
     pressure0 = df.loc[startIndex - 50: startIndex, 'Pressure'].mean()
-    print(pressure0)
     temp0 = df.loc[startIndex - 50: startIndex, 'Temperature'].mean()
-    print(temp0)
     altitude = launchDf['Pressure'].apply(altitudeFunc1(temp0, pressure0))
     # altitude = launchDf['Pressure'].apply(altitudeFunc2(temp0, pressure0))
     altitude.name = "Altitude"
+
     launchDf = launchDf.join(altitude)
-    launchDf["Altitude"].plot(style='b.')
-    plt.title("Altitude (" + str(round(altitude.max(), 2)) + " ft apogee)")
+    # The None is a JANKY FIX FOR BAD DATA GET RID OF IT LATER
+    apogee = launchDf.loc[(launchDf['dpdt'] == None) | (abs(launchDf['dpdt']) < 10)]["Altitude"].max()
+
+    if not SEPARATE_FIGURES:
+        launchDf["Altitude"].plot(style='b.', markersize=3, ax=axes[1, 2])
+    else:
+        launchDf["Altitude"].plot(style='b.', markersize=3)
+    plt.title("Altitude (" + str(round(apogee, 2)) + " ft apogee)")
     plt.xlabel("Seconds")
     plt.show()
 
