@@ -7,9 +7,8 @@ EXPORT_LAUNCH = False
 
 # Structure: {'Title': [[indices], [values]]}
 rawData = {'Temperature': [[], []], 'Pressure': [[], []], 'X accel': [[], []], 'Y accel': [[], []], 'Z accel': [[], []]}
+# Structure: {index: micros}
 masterTimes = {}
-firstTime = None
-lastTime = None
 
 # Processes the incoming file and stores the data in the rawData dictionary 
 def getAllData(fileName):
